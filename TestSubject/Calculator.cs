@@ -18,6 +18,16 @@ namespace TestSubject
             await Task.Delay(10);
             return a + b;
         }
+        public async Task<int> SlowAddAsync(int a, int b, int delayMs)
+        {
+            await Task.Delay(delayMs);
+            return a + b;
+        }
+        public int SleepSort(int value, int sleepMs)
+        {
+            Thread.Sleep(sleepMs);
+            return value;
+        }
     }
 
     public class StringHelper
