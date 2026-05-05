@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
-using System.Threading.Tasks;
-
-using System;
 
 namespace TestFramework
 {
@@ -85,6 +81,107 @@ namespace TestFramework
         {
             if (fullString.Contains(substring))
                 throw new AssertException($"'{fullString}' contains '{substring}'");
+        }
+
+        public static void That(Expression<Func<bool>> expression)
+        {
+            if (expression.Compile().Invoke()) return;
+
+            var body = expression.Body;
+            var sb = new StringBuilder();
+            sb.Append("Assertion failed: ");
+            FormatExpression(body, sb);
+            sb.Append(" is false.");
+            throw new AssertException(sb.ToString());
+        }
+
+        private static void FormatExpression(Expression expr, StringBuilder sb)
+        {
+            switch (expr)
+            {
+                case BinaryExpression binary:
+                    sb.Append("(");
+                    FormatExpression(binary.Left, sb);
+                    sb.Append($" {GetOperatorSymbol(binary.NodeType)} ");
+                    FormatExpression(binary.Right, sb);
+                    sb.Append(")");
+                    break;
+                case MemberExpression member:
+                    try
+                    {
+                        object value = Expression.Lambda(member).Compile().DynamicInvoke();
+                        sb.Append(value?.ToString() ?? "null");
+                    }
+                    catch
+                    {
+                        sb.Append(member.Member.Name);
+                    }
+                    break;
+                case ConstantExpression constant:
+                    sb.Append(constant.Value?.ToString() ?? "null");
+                    break;
+                case MethodCallExpression call:
+                    sb.Append(call.Method.Name);
+                    sb.Append("(...)");
+                    break;
+                default:
+                    sb.Append(expr.ToString());
+                    break;
+            }
+        }
+
+        private static string GetOperatorSymbol(ExpressionType nodeType)
+        {
+            return nodeType switch
+            {
+                ExpressionType.Equal => "==",
+                ExpressionType.NotEqual => "!=",
+                ExpressionType.GreaterThan => ">",
+                ExpressionType.GreaterThanOrEqual => ">=",
+                ExpressionType.LessThan => "<",
+                ExpressionType.LessThanOrEqual => "<=",
+                ExpressionType.Add => "+",
+                ExpressionType.Subtract => "-",
+                ExpressionType.Multiply => "*",
+                ExpressionType.Divide => "/",
+                _ => nodeType.ToString()
+            };
+        }
+
+        private static void AnalyzeExpression(Expression expr, StringBuilder sb)
+        {
+            if (expr is BinaryExpression binary)
+            {
+                sb.Append("(");
+                AnalyzeExpression(binary.Left, sb);
+                sb.Append($" {binary.NodeType} ");
+                AnalyzeExpression(binary.Right, sb);
+                sb.Append(")");
+                return;
+            }
+            if (expr is MethodCallExpression call)
+            {
+                sb.Append(call.Method.Name);
+                sb.Append("(");
+                for (int i = 0; i < call.Arguments.Count; i++)
+                {
+                    if (i > 0) sb.Append(", ");
+                    AnalyzeExpression(call.Arguments[i], sb);
+                }
+                sb.Append(")");
+                return;
+            }
+            if (expr is MemberExpression member)
+            {
+                sb.Append(member.Member.Name);
+                return;
+            }
+            if (expr is ConstantExpression constant)
+            {
+                sb.Append(constant.Value?.ToString() ?? "null");
+                return;
+            }
+            sb.Append(expr.ToString());
         }
     }
 }
