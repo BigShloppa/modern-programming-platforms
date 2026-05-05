@@ -17,8 +17,8 @@ namespace LoadSimulator
 
         static void Main(string[] args)
         {
-            Console.WriteLine("=== Dynamic Thread Pool Load Simulator ===");
-            Console.WriteLine("Press any key to start...");
+            Console.WriteLine(" Dynamic Thread Pool Load Simulator ");
+            Console.WriteLine("Press any key to start");
             Console.ReadKey();
 
             var assembly = Assembly.LoadFrom("Tests.dll");
@@ -54,24 +54,24 @@ namespace LoadSimulator
 
                 Console.WriteLine($"\nPreparing to execute {allTasks.Count} test tasks...");
 
-                Console.WriteLine("\n--- PHASE 1: Low load (single tasks every 2 seconds) ---");
+                Console.WriteLine("\n1: Low load (single tasks every 2 seconds)");
                 for (int i = 0; i < Math.Min(10, allTasks.Count); i++)
                 {
                     pool.EnqueueTask(allTasks[i]);
                     Thread.Sleep(2000);
                 }
 
-                Console.WriteLine("\n--- PHASE 2: Burst load (enqueue 20 tasks quickly) ---");
+                Console.WriteLine("\n2: Burst load (enqueue 20 tasks quickly)");
                 int burstStart = 10;
                 for (int i = burstStart; i < burstStart + 20 && i < allTasks.Count; i++)
                 {
                     pool.EnqueueTask(allTasks[i]);
                 }
 
-                Console.WriteLine("\n--- PHASE 3: Idle period (no tasks for 5 seconds) ---");
+                Console.WriteLine("\n3: Idle period (no tasks for 5 seconds)");
                 Thread.Sleep(5000);
 
-                Console.WriteLine("\n--- PHASE 4: Continuous random load ---");
+                Console.WriteLine("\n4: Continuous random load");
                 int remainingStart = burstStart + 20;
                 for (int i = remainingStart; i < allTasks.Count; i++)
                 {
@@ -80,7 +80,7 @@ namespace LoadSimulator
                     Thread.Sleep(delay);
                 }
 
-                Console.WriteLine("\n--- Waiting for all tasks to complete ---");
+                Console.WriteLine("\n Waiting for all tasks to complete ");
                 while (_completedTests < allTasks.Count)
                 {
                     Thread.Sleep(500);
